@@ -10,7 +10,7 @@
 
 struct sockaddr_in server;
 
-char buff[] = "Port:8000 IP:192.168.1.103 Viettel High Tech";
+char buff[] = "Port:8000 IP:127.0.0.1 Tap doan cong nghiep vien thong quan doi viettel\n";
 char buff2[1024];
 int create_IPv4_address(struct sockaddr_in *addr, char *ip_address, int port)
 {
@@ -35,7 +35,7 @@ int main()
         return -1;
     }
     printf("client fd is %d\n", client_fd);
-    state = create_IPv4_address(&server, "127.0.0.1", PORT);
+    state = create_IPv4_address(&server, "192.168.1.103", PORT);
     if (state < 0)
     {
         printf("Failed on creating addrees for server\n");
@@ -48,8 +48,9 @@ int main()
         printf("Client has connected failed \n");
         return -1;
     }
-    write(client_fd, buff, 45);
+    write(client_fd, buff, 73);
     read(client_fd, buff2, 1024);
+    printf("%s\n", buff2);
     printf("%s\n", buff2);
     do
     {
@@ -59,5 +60,6 @@ int main()
 
     } while (!state);
     close(client_fd);
+
     return 0;
 }

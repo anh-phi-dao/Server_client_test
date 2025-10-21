@@ -8,7 +8,6 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include "socket.h"
 
 #define PORT 8000
 #define MAX_CLIENTS 3
@@ -41,7 +40,8 @@ int main()
     printf("Server fd is %d\n", server_fd);
 
     create_IPv4_server_with_any_addresses(&server, PORT);
-
+    int opt = 1;
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     state = bind(server_fd, (struct sockaddr *)&server, len);
     if (state < 0)
     {
@@ -55,13 +55,21 @@ int main()
         return -1;
     }
     printf("Ready to connect \n");
-
-    FD_ZERO(&readfds);
-    FD_SET(server_fd, &readfds);
-    max_fd = server_fd;
-
+    /*check the close condition*/
+    int close_message = 0;
     while (1)
     {
+        for (int i = 0; i < 1024; i++)
+        {
+            buff[i] = 0;
+        }
+        /*reset fd_set*/
+        FD_ZERO(&readfds);
+        /*add server_fd to readfds*/
+        FD_SET(server_fd, &readfds);
+
+        max_fd = server_fd;
+
         /*Add clients socket*/
         for (int i = 0; i < MAX_CLIENTS; i++)
         {
@@ -79,12 +87,14 @@ int main()
         /*wait for clients*/
         activity = select(max_fd + 1, &readfds, NULL, NULL, NULL);
 
-        /*new activtity*/
+        /*if server has a reading event*/
+        /*if server receive a new connection*/
         if (FD_ISSET(server_fd, &readfds))
         {
             int addrlen = sizeof(server);
             new_fd = accept(server_fd, (struct sockaddr *)&server, (socklen_t *)&addrlen);
             printf("New connection: %d\n", new_fd);
+            /*updating new fd*/
             for (int i = 0; i < MAX_CLIENTS; i++)
             {
                 if (client_fd[i] == 0)
@@ -102,9 +112,11 @@ int main()
             /*check if the client is ready or not*/
             if (FD_ISSET(sd, &readfds))
             {
-                int val_read = readline(sd, buff, 1024);
+
+                int val_read = read(sd, buff, 1024);
                 if (val_read == 0)
                 {
+                    /*close and reset fd*/
                     close(sd);
                     client_fd[i] = 0;
                     printf("Client disconnected\n");
@@ -112,11 +124,35 @@ int main()
                 else
                 {
                     printf("From client: %s\n", buff);
-                    writen(sd, "Server has received your message\n", 34);
+                    write(sd, "Server has received your message\n", 34);
+                }
+
+                if (strcmp(buff, "Close") == 0)
+                {
+                    close_message = 1;
                 }
             }
         }
+
+        if (close_message == 1)
+        {
+            for (int i = 0; i < MAX_CLIENTS; i++)
+            {
+                write(client_fd[i], "Close", 6);
+                shutdown(client_fd[i], SHUT_WR);
+            }
+            break;
+        }
     }
+
+    for (int i = MAX_CLIENTS - 1; i >= 0; i--)
+    {
+        if (client_fd[i] > 0)
+        {
+            close(client_fd[i]);
+        }
+    }
+    close(server_fd);
 
     return 0;
 }
