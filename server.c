@@ -4,6 +4,7 @@
 /*libray for socket structure*/
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include "socket.h"
 #include <unistd.h>
 
 #define PORT 8000
@@ -18,7 +19,7 @@ void create_IPv4_server_with_any_addresses(struct sockaddr_in *addr, int port)
     addr->sin_addr.s_addr = INADDR_ANY;
 }
 
-char buff2[] = "Tap doan cong nghiep vien thong quan doi Viettel";
+char buff2[] = "Tap doan cong nghiep vien thong quan doi Viettel\n";
 
 int main()
 {

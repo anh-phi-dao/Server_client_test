@@ -4,6 +4,7 @@
 /*libray for socket structure*/
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include "socket.h"
 #include <unistd.h>
 
 #define PORT 8000
@@ -52,7 +53,6 @@ int main()
     write(client_fd, buff, strlen(buff));
     read(client_fd, buff2, 1024);
     printf("%s\n", buff2);
-    shutdown(client_fd, SHUT_RDWR);
     close(client_fd);
 
     return 0;
