@@ -35,7 +35,7 @@ int main()
         return -1;
     }
     printf("client fd is %d\n", client_fd);
-    state = create_IPv4_address(&server, "127.0.0.1", PORT);
+    state = create_IPv4_address(&server, "192.168.27.167", PORT);
     if (state < 0)
     {
         printf("Failed on creating addrees for server\n");
@@ -53,10 +53,8 @@ int main()
     printf("%s\n", buff2);
     do
     {
-        lseek(client_fd, -5, SEEK_END);
         read(client_fd, buff2, 5);
         state = strcmp(buff2, "Close");
-
     } while (!state);
     close(client_fd);
     return 0;

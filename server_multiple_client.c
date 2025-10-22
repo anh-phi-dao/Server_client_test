@@ -12,9 +12,6 @@
 #define PORT 8000
 #define MAX_CLIENTS 3
 
-struct sockaddr_in server;
-char buff[1024];
-
 void create_IPv4_server_with_any_addresses(struct sockaddr_in *addr, int port)
 {
     addr->sin_family = AF_INET;
@@ -22,10 +19,9 @@ void create_IPv4_server_with_any_addresses(struct sockaddr_in *addr, int port)
     addr->sin_addr.s_addr = INADDR_ANY;
 }
 
-char buff2[] = "Tap doan cong nghiep vien thong quan doi Viettel";
+struct sockaddr_in server;
+char buff[1024];
 fd_set readfds;
-fd_set writefds;
-struct timeval tv;
 int server_fd, new_fd, client_fd[MAX_CLIENTS];
 int max_fd;
 
@@ -38,16 +34,23 @@ int main()
     /*create a tcp socket server with IPv4*/
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     printf("Server fd is %d\n", server_fd);
-
     create_IPv4_server_with_any_addresses(&server, PORT);
+    /* Aloow to reuse address and port*/
     int opt = 1;
-    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    state = setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    if (state < 0)
+    {
+        printf("Failed on trying to reuse address, the state is %d\n", state);
+        return -1;
+    }
+    /*binding the server*/
     state = bind(server_fd, (struct sockaddr *)&server, len);
     if (state < 0)
     {
         printf("Failed on binding server socket, the state is %d\n", state);
         return -1;
     }
+    /*Maximun clients is 10 for this server, we only use 3*/
     state = listen(server_fd, 10);
     if (state < 0)
     {
@@ -59,6 +62,7 @@ int main()
     int close_message = 0;
     while (1)
     {
+        /*reset the buff*/
         for (int i = 0; i < 1024; i++)
         {
             buff[i] = 0;
@@ -70,7 +74,8 @@ int main()
 
         max_fd = server_fd;
 
-        /*Add clients socket*/
+        /*Add clients socket after new client fd has bee created*/
+        /*The client_fd[] array changes thanks to the "if (FD_ISSET(server_fd, &readfds))" block" */
         for (int i = 0; i < MAX_CLIENTS; i++)
         {
 
@@ -84,7 +89,7 @@ int main()
                 max_fd = client_fd[i];
             }
         }
-        /*wait for clients*/
+        /*wait for new clients connection and clients reading events*/
         activity = select(max_fd + 1, &readfds, NULL, NULL, NULL);
 
         /*if server has a reading event*/
@@ -109,11 +114,12 @@ int main()
         for (int i = 0; i < MAX_CLIENTS; i++)
         {
             int sd = client_fd[i];
-            /*check if the client is ready or not*/
+            /*check if the client to read or not*/
             if (FD_ISSET(sd, &readfds))
             {
 
                 int val_read = read(sd, buff, 1024);
+                /*if we can not read*/
                 if (val_read == 0)
                 {
                     /*close and reset fd*/
@@ -126,25 +132,29 @@ int main()
                     printf("From client: %s\n", buff);
                     write(sd, "Server has received your message\n", 34);
                 }
-
+                /*if we receive a "Close" command*/
                 if (strcmp(buff, "Close") == 0)
                 {
                     close_message = 1;
                 }
             }
         }
-
+        /*After receving clos command from 1 client*/
         if (close_message == 1)
         {
             for (int i = 0; i < MAX_CLIENTS; i++)
             {
-                write(client_fd[i], "Close", 6);
-                shutdown(client_fd[i], SHUT_WR);
+                if (client_fd[i] > 0)
+                {
+                    write(client_fd[i], "Close", 6);
+                    shutdown(client_fd[i], SHUT_WR);
+                }
             }
             break;
         }
     }
 
+    /*Close the clients*/
     for (int i = MAX_CLIENTS - 1; i >= 0; i--)
     {
         if (client_fd[i] > 0)
@@ -152,6 +162,7 @@ int main()
             close(client_fd[i]);
         }
     }
+    /*Close the server socket*/
     close(server_fd);
 
     return 0;
