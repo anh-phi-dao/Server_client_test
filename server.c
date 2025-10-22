@@ -31,6 +31,8 @@ int main()
     main_server_fd = socket(AF_INET, SOCK_STREAM, 0);
     printf("Server fd is %d\n", main_server_fd);
 
+    int opt = 1;
+    state = setsockopt(main_server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     create_IPv4_server_with_any_addresses(&server, PORT);
 
     do

@@ -52,7 +52,13 @@ int main()
 
     write(client_fd, buff, strlen(buff));
     read(client_fd, buff2, 1024);
-    printf("%s\n", buff2);
+    printf("%s", buff2);
+    int val_read = 0;
+    do
+    {
+        val_read = read(client_fd, buff2, 1024);
+    } while (val_read > 0);
+
     close(client_fd);
 
     return 0;
