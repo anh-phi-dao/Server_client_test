@@ -12,6 +12,7 @@ struct sockaddr_in server;
 
 char buff[] = "Port:8000 IP:192.168.1.103 Viettel High Tech";
 char buff2[1024];
+int val_read;
 int create_IPv4_address(struct sockaddr_in *addr, char *ip_address, int port)
 {
     addr->sin_family = AF_INET;
@@ -48,14 +49,22 @@ int main()
         printf("Client has connected failed \n");
         return -1;
     }
-    write(client_fd, buff, 45);
-    read(client_fd, buff2, 1024);
-    printf("%s\n", buff2);
+
     do
     {
-        read(client_fd, buff2, 5);
-        state = strcmp(buff2, "Close");
-    } while (!state);
+        int buff_len = strlen(buff2);
+        for (int i = 0; i < buff_len; i++)
+        {
+            buff2[i] = 0;
+        }
+        write(client_fd, buff, 45);
+        val_read = (client_fd, buff2, 34);
+        printf("Val read=%d\n", val_read);
+        printf("%s\n", buff2);
+        sleep(1);
+
+    } while (val_read != 0);
     close(client_fd);
+    printf("Client has close\n");
     return 0;
 }

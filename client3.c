@@ -10,8 +10,9 @@
 
 struct sockaddr_in server;
 
-char buff[] = "Port:8000 IP:127.0.0.1 Tap doan cong nghiep vien thong quan doi viettel";
+char buff[] = "Port:8000 IP:192.168.1.125 Tap doan cong nghiep vien thong quan doi viettel";
 char buff2[1024];
+int val_read;
 int create_IPv4_address(struct sockaddr_in *addr, char *ip_address, int port)
 {
     addr->sin_family = AF_INET;
@@ -49,16 +50,21 @@ int main()
         return -1;
     }
 
-    write(client_fd, buff, 72);
-    read(client_fd, buff2, 1024);
-    printf("%s\n", buff2);
     do
     {
-        read(client_fd, buff2, 5);
-        state = strcmp(buff2, "Close");
+        int buff_len = strlen(buff2);
+        for (int i = 0; i < buff_len; i++)
+        {
+            buff2[i] = 0;
+        }
+        write(client_fd, buff, 76);
+        val_read = (client_fd, buff2, 34);
+        printf("Val read=%d\n", val_read);
+        printf("%s\n", buff2);
+        sleep(1);
 
-    } while (!state);
+    } while (val_read != 0);
     close(client_fd);
-
+    printf("Client has close\n");
     return 0;
 }

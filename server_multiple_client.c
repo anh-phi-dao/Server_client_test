@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 #define PORT 8000
-#define MAX_CLIENTS 3
+#define MAX_CLIENTS 4
 
 void create_IPv4_server_with_any_addresses(struct sockaddr_in *addr, int port)
 {
@@ -24,22 +24,26 @@ int Handling_message(struct pollfd *fds, int *client_fd, char *buff)
     int ret = poll(fds, 1, 0.5);
     if (ret > 0)
     {
-        int val_read = read(fds->fd, buff, 1024);
-        if (val_read == 0)
+        if (fds->revents & POLLIN)
         {
-            close(fds->fd);
-            *client_fd = 0;
-            printf("Client disconnected\n");
-        }
-        else
-        {
-            printf("From client: %s\n", buff);
-            write(fds->fd, "Server has received your message\n", 34);
-        }
-        /*if we receive a "Close" command*/
-        if (strcmp(buff, "Close") == 0)
-        {
-            close_mess = 1;
+            int val_read = read(fds->fd, buff, 1024);
+            if (val_read == 0)
+            {
+                close(fds->fd);
+                *client_fd = 0;
+                fds->fd = 0;
+                printf("Client disconnected\n");
+            }
+            else
+            {
+                printf("From client: %s\n", buff);
+                write(*client_fd, "Server has received your message\n", 34);
+            }
+            /*if we receive a "Close" command*/
+            if (strcmp(buff, "Close") == 0)
+            {
+                close_mess = 1;
+            }
         }
     }
     return close_mess;
@@ -141,20 +145,10 @@ int main()
             {
                 if (client_fd[i] > 0)
                 {
-                    write(client_fd[i], "Close", 6);
-                    shutdown(client_fd[i], SHUT_WR);
+                    close(client_fd[i]);
                 }
             }
             break;
-        }
-    }
-
-    /*Close the clients*/
-    for (int i = MAX_CLIENTS - 1; i >= 0; i--)
-    {
-        if (client_fd[i] > 0)
-        {
-            close(client_fd[i]);
         }
     }
 

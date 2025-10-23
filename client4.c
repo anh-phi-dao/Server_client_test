@@ -49,13 +49,8 @@ int main()
         return -1;
     }
     write(client_fd, buff, 5);
-    read(client_fd, buff2, 1024);
+    read(client_fd, buff2, 34);
     printf("%s\n", buff2);
-    do
-    {
-        read(client_fd, buff2, 5);
-        state = strcmp(buff2, "Close");
-    } while (!state);
     close(client_fd);
     return 0;
 }
